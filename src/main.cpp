@@ -1,5 +1,11 @@
 #include <Arduino.h>   // needed for PlatformIO
+#include <BLEDevice.h>
+#include <Mesh.h>
 #include <helpers/BaseCompanionRadioMesh.h>
+
+#include <RadioLib.h>
+#include <helpers/CustomSX1262.h>
+#include <modules/SX126x/SX1262.h>
 
 #include <SPIFFS.h>
 
@@ -12,7 +18,6 @@
 #include <helpers/IdentityStore.h>
 #include <helpers/BaseSerialInterface.h>
 #include <RTClib.h>
-
 
 #include <Wire.h>
 #include <Adafruit_GFX.h>
