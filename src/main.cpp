@@ -23,6 +23,11 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#include <helpers/HeltecV3Board.h>
+#include <helpers/CustomSX1262Wrapper.h>
+
+static HeltecV3Board board;
+
 #define SDA_OLED 17
 #define SCL_OLED 18
 #define Vext 36
@@ -100,6 +105,23 @@ public:
      : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
   
      }
+protected:
+  void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.printf("(%s) -> %s\n", path_len == 0xFF ? "DIRECT" : "FLOOD", from.name);
+    display.printf("%s\n", text);
+    display.display();
+  }
+  void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onChannelMessageRecv(channel, in_path_len, timestamp, text);
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.printf("(%s) -> Channel\n", in_path_len == 0xFF ? "DIRECT" : "FLOOD");
+    display.printf("%s\n", text);
+    display.display();
+  }
 };
 
 
