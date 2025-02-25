@@ -233,6 +233,7 @@ public:
     //_prefs.rx_delay_base = 10.0f;  enable once new algo fixed
   }
 
+  int getUnreadMsgNb() {return offline_queue_len;}
   void begin(FILESYSTEM& fs, mesh::RNG& trng);
   const char* getNodeName() { return _prefs.node_name; }
   void startInterface(BaseSerialInterface& serial);

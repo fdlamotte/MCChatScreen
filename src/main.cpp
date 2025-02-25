@@ -37,7 +37,8 @@ static HeltecV3Board board;
 
 #define OLED_RESET     21 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire1, OLED_RESET);
 
 /* ---------------------------------- CONFIGURATION ------------------------------------- */
 
@@ -100,27 +101,38 @@ StdRNG fast_rng;
 SimpleMeshTables tables;
 
 class MyMesh : public BaseCompanionRadioMesh {
+
 public:
   MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
      : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
   
      }
+
 protected:
-  void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
-    BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
+  char last_msg [MAX_FRAME_SIZE];
+  char last_orig [80];
+
+  void drawScreen() {
     display.clearDisplay();
     display.setCursor(0,0);
-    display.printf("(%s) -> %s\n", path_len == 0xFF ? "DIRECT" : "FLOOD", from.name);
-    display.printf("%s\n", text);
+    display.printf("MC node : %s\n", getNodeName());
+    display.printf("Unread msgs : %d\n", getUnreadMsgNb());
+    display.printf(" %s\n==============8<-----\n", last_orig);
+    display.printf("%s\n", last_msg);
     display.display();
+  }
+
+  void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
+    sprintf(last_orig, "(%s) <- %s", path_len == 0xFF ? "DRCT" : "FL8D", from.name);
+    strncpy(last_msg, text, MAX_FRAME_SIZE);
+    drawScreen();
   }
   void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override {
     BaseCompanionRadioMesh::onChannelMessageRecv(channel, in_path_len, timestamp, text);
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.printf("(%s) -> Channel\n", in_path_len == 0xFF ? "DIRECT" : "FLOOD");
-    display.printf("%s\n", text);
-    display.display();
+    sprintf(last_orig, "(%s) <- Channel", in_path_len == 0xFF ? "DRCT" : "FL8D");
+    strncpy(last_msg, text, MAX_FRAME_SIZE);
+    drawScreen();
   }
 };
 
@@ -134,8 +146,8 @@ void halt() {
 void setup() {
   Serial.begin(115200);
 
-
   board.begin();
+
 #ifdef SX126X_DIO3_TCXO_VOLTAGE
   float tcxo = SX126X_DIO3_TCXO_VOLTAGE;
 #else
@@ -146,7 +158,7 @@ void setup() {
   spi.begin(P_LORA_SCLK, P_LORA_MISO, P_LORA_MOSI);
 #endif
 
-  Wire.begin(SDA_OLED, SCL_OLED);
+  Wire1.begin(SDA_OLED, SCL_OLED);
 
   pinMode(Vext,OUTPUT);
   digitalWrite(Vext, LOW);
@@ -155,16 +167,14 @@ void setup() {
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;); // Don't proceed, loop forever
+    for(;;) delay(100); // Don't proceed, loop forever
   }
 
   display.clearDisplay();
-
   display.setTextSize(1);      // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE); // Draw white text
   display.setCursor(0, 0);     // Start at top-left corner
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
-
   display.printf("Hello !");
   display.display();
 
