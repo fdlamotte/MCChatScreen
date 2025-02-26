@@ -1,5 +1,9 @@
+#define FIRMWARE_BUILD_DATE   "26 Feb 2025"
+
 #include <Arduino.h>   // needed for PlatformIO
 #include <BLEDevice.h>
+
+
 #include <Mesh.h>
 #include <helpers/BaseCompanionRadioMesh.h>
 
@@ -105,20 +109,40 @@ class MyMesh : public BaseCompanionRadioMesh {
 public:
   MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
      : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
-  
-     }
+    }
+
+  void begin(FILESYSTEM& fs, mesh::RNG& trng) {
+    BaseCompanionRadioMesh::begin(fs, trng);
+
+    display.setCursor(0,0);
+    display.setTextSize(2); 
+    display.clearDisplay();
+    display.printf("MESHCORE\n\n");
+    display.setTextSize(1);
+    display.printf("Node  : %s\n", getNodeName());
+    display.printf("Build : %s\n", FIRMWARE_BUILD_DATE);
+    display.display();  
+  }
+
 
 protected:
   char last_msg [MAX_FRAME_SIZE];
   char last_orig [80];
 
   void drawScreen() {
+    int msgs = getUnreadMsgNb();
     display.clearDisplay();
-    display.setCursor(0,0);
-    display.printf("MC node : %s\n", getNodeName());
-    display.printf("Unread msgs : %d\n", getUnreadMsgNb());
-    display.printf(" %s\n==============8<-----\n", last_orig);
-    display.printf("%s\n", last_msg);
+    if (msgs) {
+      display.setCursor(0,0);
+      display.setTextSize(1); 
+      display.printf("MC node : %s\n", getNodeName());
+      display.printf("   Unread msgs :\n", msgs);
+      display.printf(" %s\n==============8<-----\n", last_orig);
+      display.printf("%s\n", last_msg);
+      display.setCursor(100,0);
+      display.setTextSize(2);
+      display.printf("%d", msgs);
+    }
     display.display();
   }
 
@@ -134,6 +158,10 @@ protected:
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
+  void onNextMsgSync() override {
+    drawScreen();
+  }
+
 };
 
 

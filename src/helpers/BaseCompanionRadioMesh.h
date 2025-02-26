@@ -54,7 +54,9 @@
 /*------------ Frame Protocol --------------*/
 
 #define FIRMWARE_VER_CODE    1
-#define FIRMWARE_BUILD_DATE   "19 Feb 2025"
+#ifndef FIRMWARE_BUILD_DATE
+#define FIRMWARE_BUILD_DATE   "26 Feb 2025"
+#endif
 
 #define CMD_APP_START              1
 #define CMD_SEND_TXT_MSG           2
@@ -209,6 +211,8 @@ protected:
   void onContactResponse(const ContactInfo& contact, const uint8_t* data, uint8_t len) override;
   void onRawDataRecv(mesh::Packet* packet) override;
   void onSendTimeout() override;
+
+  virtual void onNextMsgSync() {};
 
 public:
 
