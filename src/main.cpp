@@ -36,11 +36,17 @@ static HeltecV3Board board;
 #define SCL_OLED 18
 #define Vext 36
 
+#define USER_BTN 0
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 #define OLED_RESET     21 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+
+#ifndef SCREEN_ON_TIME
+#define SCREEN_ON_TIME 30000
+#endif
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire1, OLED_RESET);
 
@@ -129,14 +135,18 @@ SimpleMeshTables tables;
 
 class MyMesh : public BaseCompanionRadioMesh {
 
-public:
-  MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
-     : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
-    }
+protected:
+  char last_msg [MAX_FRAME_SIZE];
+  char last_orig [80];
+  int nextBlanking;
 
-  void begin(FILESYSTEM& fs, mesh::RNG& trng) {
-    BaseCompanionRadioMesh::begin(fs, trng);
+  void blankScreen() {
+    display.setCursor(0,0);
+    display.clearDisplay();
+    display.display();  
+  }
 
+  void drawHome() {
     display.setCursor(0,0);
     display.clearDisplay();
     display.drawBitmap(0,0,epd_bitmap_meshcore,128,13,SSD1306_WHITE);
@@ -145,13 +155,12 @@ public:
     display.printf("Build: %s\n", FIRMWARE_BUILD_DATE);
     display.printf("freq : %03.2f sf %d\n", _prefs.freq, _prefs.sf);
     display.printf("bw   : %03.2f cr %d\n", _prefs.bw, _prefs.cr);
-    display.display();  
+    display.display();
+
+    if (SCREEN_ON_TIME > 0) {
+      nextBlanking = futureMillis(SCREEN_ON_TIME);
+    }
   }
-
-
-protected:
-  char last_msg [MAX_FRAME_SIZE];
-  char last_orig [80];
 
   void drawScreen() {
     int msgs = getUnreadMsgNb();
@@ -168,6 +177,10 @@ protected:
       display.printf("%d", msgs);
     }
     display.display();
+
+    if (SCREEN_ON_TIME > 0) {
+      nextBlanking = futureMillis(SCREEN_ON_TIME);
+    }
   }
 
   void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
@@ -180,6 +193,7 @@ protected:
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
+
   void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override {
     BaseCompanionRadioMesh::onChannelMessageRecv(channel, in_path_len, timestamp, text);
     if (in_path_len == 0xFF) {
@@ -190,10 +204,44 @@ protected:
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
+
   void onNextMsgSync() override {
-    drawScreen();
+    blankScreen();
   }
 
+public:
+  MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
+     : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
+    }
+
+  void begin(FILESYSTEM& fs, mesh::RNG& trng) {
+    BaseCompanionRadioMesh::begin(fs, trng);
+    drawHome();
+  }
+
+  void loop() {
+    BaseCompanionRadioMesh::loop();
+    if ((nextBlanking > 0) && millisHasNowPassed(nextBlanking)) {
+      blankScreen();
+    }
+
+    static int nextBtnCheck = 0;
+    static int lastBtnState = 0;
+    if (millisHasNowPassed(nextBtnCheck)) {
+      int btnState = digitalRead(USER_BTN);
+      bool btnChanged = (btnState != lastBtnState);
+      if (btnChanged && (btnState == LOW)) {
+        if (getUnreadMsgNb() > 0) {
+          drawScreen();
+        } else {
+          drawHome();
+        }
+      }
+    
+      lastBtnState = btnState;
+      nextBtnCheck = futureMillis(500);  
+    }  
+  }
 };
 
 
@@ -236,6 +284,8 @@ void setup() {
   display.setCursor(0, 0);     // Start at top-left corner
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
   display.display();
+
+  //pinMode(USER_BTN, INPUT);
 
   int status = radio.begin(LORA_FREQ, LORA_BW, LORA_SF, LORA_CR, RADIOLIB_SX126X_SYNC_WORD_PRIVATE, LORA_TX_POWER, 8, tcxo);
   if (status != RADIOLIB_ERR_NONE) {
