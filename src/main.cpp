@@ -141,10 +141,10 @@ public:
     display.clearDisplay();
     display.drawBitmap(0,0,epd_bitmap_meshcore,128,13,SSD1306_WHITE);
     display.setTextSize(1);
-    display.printf("\n\n\nNode  : %s\n", getNodeName());
-    display.printf("Build : %s\n", FIRMWARE_BUILD_DATE);
-    display.printf("freq  : %03.2f sf %d\n", _prefs.freq, _prefs.sf);
-    display.printf("bw    : %03.2f cr %d\n", _prefs.bw, _prefs.cr);
+    display.printf("\n\n\n%s\n", getNodeName());
+    display.printf("Build: %s\n", FIRMWARE_BUILD_DATE);
+    display.printf("freq : %03.2f sf %d\n", _prefs.freq, _prefs.sf);
+    display.printf("bw   : %03.2f cr %d\n", _prefs.bw, _prefs.cr);
     display.display();  
   }
 
@@ -159,11 +159,11 @@ protected:
     if (msgs) {
       display.setCursor(0,0);
       display.setTextSize(1); 
-      display.printf("MC node : %s\n", getNodeName());
-      display.printf("   Unread msgs :\n", msgs);
-      display.printf(" %s\n==============8<-----\n", last_orig);
+      display.printf("%s\n", getNodeName());
+      display.printf("\n\n");
+      display.printf("-%s\n", last_orig);
       display.printf("%s\n", last_msg);
-      display.setCursor(100,0);
+      display.setCursor(100,9);
       display.setTextSize(2);
       display.printf("%d", msgs);
     }
@@ -172,13 +172,21 @@ protected:
 
   void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
     BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
-    sprintf(last_orig, "(%s) <- %s", path_len == 0xFF ? "DRCT" : "FL8D", from.name);
+    if (path_len == 0xFF) {
+      sprintf(last_orig, "(D) %s", from.name);
+    } else {
+      sprintf(last_orig, "(%d) %s", path_len, from.name);
+    }
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
   void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override {
     BaseCompanionRadioMesh::onChannelMessageRecv(channel, in_path_len, timestamp, text);
-    sprintf(last_orig, "(%s) <- Channel", in_path_len == 0xFF ? "DRCT" : "FL8D");
+    if (in_path_len == 0xFF) {
+      sprintf(last_orig, "(D) Chan");
+    } else {
+      sprintf(last_orig, "(%d) Chan");
+    }
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
@@ -227,7 +235,6 @@ void setup() {
   display.setTextColor(SSD1306_WHITE); // Draw white text
   display.setCursor(0, 0);     // Start at top-left corner
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
-  display.printf("Hello !");
   display.display();
 
   int status = radio.begin(LORA_FREQ, LORA_BW, LORA_SF, LORA_CR, RADIOLIB_SX126X_SYNC_WORD_PRIVATE, LORA_TX_POWER, 8, tcxo);
