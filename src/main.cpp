@@ -1,4 +1,4 @@
-#define FIRMWARE_BUILD_DATE   "26 Feb 2025"
+#define FIRMWARE_BUILD_DATE   "27 Feb 2025"
 
 #include <Arduino.h>   // needed for PlatformIO
 #include <BLEDevice.h>
@@ -117,10 +117,12 @@ public:
     display.setCursor(0,0);
     display.setTextSize(2); 
     display.clearDisplay();
-    display.printf("MESHCORE\n\n");
+    display.printf("MESHCORE\n");
     display.setTextSize(1);
-    display.printf("Node  : %s\n", getNodeName());
+    display.printf("\nNode  : %s\n", getNodeName());
     display.printf("Build : %s\n", FIRMWARE_BUILD_DATE);
+    display.printf("freq  : %03.2f sf %d\n", _prefs.freq, _prefs.sf);
+    display.printf("bw    : %03.2f cr %d\n", _prefs.bw, _prefs.cr);
     display.display();  
   }
 

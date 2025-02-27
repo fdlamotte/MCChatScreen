@@ -55,7 +55,7 @@
 
 #define FIRMWARE_VER_CODE    1
 #ifndef FIRMWARE_BUILD_DATE
-#define FIRMWARE_BUILD_DATE   "26 Feb 2025"
+#define FIRMWARE_BUILD_DATE   "27 Feb 2025"
 #endif
 
 #define CMD_APP_START              1
@@ -131,6 +131,7 @@ struct NodePrefs {  // persisted to file
 };
 
 class BaseCompanionRadioMesh : public BaseChatMesh {
+protected:
   FILESYSTEM* _fs;
   RADIO_CLASS* _phy;
   IdentityStore* _identity_store;
@@ -180,8 +181,6 @@ class BaseCompanionRadioMesh : public BaseChatMesh {
   void addToOfflineQueue(const uint8_t frame[], int len);
   int getFromOfflineQueue(uint8_t frame[]);
 
-  void soundBuzzer();
-
 protected:
   NodePrefs _prefs;
   mesh::MainBoard* _board;
@@ -208,11 +207,16 @@ protected:
   bool processAck(const uint8_t *data) override;
   void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override;
   void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override;
+  void onCommandDataRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override;
   void onContactResponse(const ContactInfo& contact, const uint8_t* data, uint8_t len) override;
   void onRawDataRecv(mesh::Packet* packet) override;
   void onSendTimeout() override;
 
+  void queueMessage(const ContactInfo& from, uint8_t txt_type, uint8_t path_len, uint32_t sender_timestamp, const char *text);
+  int getUnreadMsgNb() {return offline_queue_len;}
   virtual void onNextMsgSync() {};
+
+  void soundBuzzer();
 
 public:
 
@@ -237,7 +241,6 @@ public:
     //_prefs.rx_delay_base = 10.0f;  enable once new algo fixed
   }
 
-  int getUnreadMsgNb() {return offline_queue_len;}
   void begin(FILESYSTEM& fs, mesh::RNG& trng);
   const char* getNodeName() { return _prefs.node_name; }
   void startInterface(BaseSerialInterface& serial);
