@@ -24,9 +24,11 @@ void ppsHandler(void)
 
 void printUnknownSentence(MicroNMEA& nmea)
 {
+#ifdef GPS_DEBUG
 	console.println();
 	console.print("Unknown sentence: ");
 	console.println(nmea.getSentence());
+#endif
 }
 
 void gpsHardwareReset()
@@ -66,21 +68,21 @@ void gps_setup(HardwareSerial& gps_ser)
 	MicroNMEA::sendSentence(*gps, "$PORZB");
 
 	// Send only RMC and GGA messages.
-	//MicroNMEA::sendSentence(gps, "$PORZB,RMC,1,GGA,1");
+	MicroNMEA::sendSentence(*gps, "$PORZB,RMC,1,GGA,1");
 
 	// Disable compatability mode (NV08C-CSM proprietary message) and
 	// adjust precision of time and position fields
 	//MicroNMEA::sendSentence(gps, "$PNVGNME,2,9,1");
-	// MicroNMEA::sendSentence(gps, "$PONME,2,4,1,0");
+	//MicroNMEA::sendSentence(gps, "$PONME,2,4,1,0");
 	//MicroNMEA::sendSentence(gps, "$PMTK314,5,5,5,5,5,5,0,0,0,0,0,0,10,10");
 }
 
 void gps_feed_nmea() {
 	while (gps->available()) {
 		char c = gps->read();
-		//#ifdef GPS_NMEA_DEBUG
+		#ifdef GPS_NMEA_DEBUG
 		console.print(c);
-		//#endif
+		#endif
 		nmea.process(c);
 	}
 }
