@@ -143,7 +143,8 @@ protected:
   void blankScreen() {
     display.setCursor(0,0);
     display.clearDisplay();
-    display.display();  
+    display.display();
+    nextBlanking = 0;
   }
 
   void drawHome() {
