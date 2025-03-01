@@ -32,8 +32,6 @@
 
 static HeltecV3Board board;
 
-#include "gps.h"
-HardwareSerial gps_serial(1);
 
 #define SDA_OLED 17
 #define SCL_OLED 18
@@ -75,6 +73,30 @@ const int epd_bitmap_allArray_LEN = 1;
 const unsigned char* epd_bitmap_allArray[1] = {
     epd_bitmap_meshcore
 };
+
+
+#ifdef HAS_GPS
+
+#include "helpers/gps/gps.h"
+HardwareSerial gps_serial(1);
+
+#ifndef GPS_RX_PIN
+#define GPS_RX_PIN              (34)
+#endif
+
+#ifndef GPS_TX_PIN
+#define GPS_TX_PIN              (33)
+#endif
+
+#ifndef GPS_EN
+#define GPS_EN                  (48)
+#endif
+
+#ifndef GPS_RESET
+#define GPS_RESET               (47)
+#endif
+
+#endif
 
 /* ---------------------------------- CONFIGURATION ------------------------------------- */
 
@@ -137,8 +159,10 @@ StdRNG fast_rng;
 SimpleMeshTables tables;
 
 class MyMesh : public BaseCompanionRadioMesh {
+#ifdef HAS_GPS
   bool gps_time_sync_needed = true;
   MicroNMEA* _nmea;
+#endif
 
 protected:
   char last_msg [MAX_FRAME_SIZE];
@@ -226,6 +250,7 @@ protected:
   }
 
   void gpsHandler() {
+#ifdef HAS_GPS
     static long next_gps_update = 0;
     if (millisHasNowPassed(next_gps_update)) {
       if (_nmea->isValid()) {
@@ -239,6 +264,7 @@ protected:
       }
       next_gps_update = futureMillis(5000);
     }
+#endif
   }
 
   void buttonHandler() {
@@ -267,9 +293,14 @@ protected:
   }
 
 public:
+#ifdef HAS_GPS
   MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables, MicroNMEA& nmea)
      : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER),
      _nmea(&nmea) {
+#else
+  MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
+     : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
+#endif
     }
 
   void begin(FILESYSTEM& fs, mesh::RNG& trng) {
@@ -286,7 +317,11 @@ public:
   }
 };
 
+#ifdef HAS_GPS
 MyMesh the_mesh(radio, *new WRAPPER_CLASS(radio, board), fast_rng, *new VolatileRTCClock(), tables, nmea);
+#else
+MyMesh the_mesh(radio, *new WRAPPER_CLASS(radio, board), fast_rng, *new VolatileRTCClock(), tables);
+#endif
 
 void halt() {
   while (1) ;
@@ -297,7 +332,8 @@ void setup() {
 
   board.begin();
 
-  gps_serial.begin(9600, SERIAL_8N1, 34,33);
+#ifdef HAS_GPS
+  gps_serial.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
 
   pinMode(47, OUTPUT);
   pinMode(48, OUTPUT);
@@ -305,6 +341,7 @@ void setup() {
   digitalWrite(48, HIGH);
 
   gps_setup(gps_serial);
+#endif
 
 #ifdef SX126X_DIO3_TCXO_VOLTAGE
   float tcxo = SX126X_DIO3_TCXO_VOLTAGE;
@@ -372,7 +409,9 @@ void setup() {
 }
 
 void loop() {
+#ifdef HAS_GPS
   gps_feed_nmea();
+#endif
 
   the_mesh.loop();
 }
