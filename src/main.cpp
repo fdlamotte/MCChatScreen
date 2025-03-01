@@ -32,6 +32,7 @@
 
 static HeltecV3Board board;
 
+
 #define SDA_OLED 17
 #define SCL_OLED 18
 #define Vext 36
@@ -72,6 +73,30 @@ const int epd_bitmap_allArray_LEN = 1;
 const unsigned char* epd_bitmap_allArray[1] = {
     epd_bitmap_meshcore
 };
+
+
+#ifdef HAS_GPS
+
+#include "helpers/gps/gps.h"
+HardwareSerial gps_serial(1);
+
+#ifndef GPS_RX_PIN
+#define GPS_RX_PIN              (34)
+#endif
+
+#ifndef GPS_TX_PIN
+#define GPS_TX_PIN              (33)
+#endif
+
+#ifndef GPS_EN
+#define GPS_EN                  (48)
+#endif
+
+#ifndef GPS_RESET
+#define GPS_RESET               (47)
+#endif
+
+#endif
 
 /* ---------------------------------- CONFIGURATION ------------------------------------- */
 
@@ -134,6 +159,10 @@ StdRNG fast_rng;
 SimpleMeshTables tables;
 
 class MyMesh : public BaseCompanionRadioMesh {
+#ifdef HAS_GPS
+  bool gps_time_sync_needed = true;
+  MicroNMEA* _nmea;
+#endif
 
 protected:
   char last_msg [MAX_FRAME_SIZE];
@@ -221,22 +250,25 @@ protected:
     blankScreen();
   }
 
-public:
-  MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
-     : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
+  void gpsHandler() {
+#ifdef HAS_GPS
+    static long next_gps_update = 0;
+    if (millisHasNowPassed(next_gps_update)) {
+      if (_nmea->isValid()) {
+        _prefs.node_lat = ((double)_nmea->getLatitude())/1000000.;
+        _prefs.node_lon = ((double)_nmea->getLongitude())/1000000.;
+        if (gps_time_sync_needed) {
+          DateTime dt(_nmea->getYear(), _nmea->getMonth(),_nmea->getDay(),_nmea->getHour(),_nmea->getMinute(),_nmea->getSecond());
+          getRTCClock()->setCurrentTime(dt.unixtime());
+          gps_time_sync_needed = false;
+        }
+      }
+      next_gps_update = futureMillis(5000);
     }
-
-  void begin(FILESYSTEM& fs, mesh::RNG& trng) {
-    BaseCompanionRadioMesh::begin(fs, trng);
-    drawHome();
+#endif
   }
 
-  void loop() {
-    BaseCompanionRadioMesh::loop();
-    if ((nextBlanking > 0) && millisHasNowPassed(nextBlanking)) {
-      blankScreen();
-    }
-
+  void buttonHandler() {
     static int nextBtnCheck = 0;
     static int lastBtnState = 0;
     if (millisHasNowPassed(nextBtnCheck)) {
@@ -254,10 +286,43 @@ public:
       nextBtnCheck = futureMillis(500);  
     }  
   }
+
+  void screenHandler() {        
+    if ((nextBlanking > 0) && millisHasNowPassed(nextBlanking)) {
+      blankScreen();
+    }
+  }
+
+public:
+#ifdef HAS_GPS
+  MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables, MicroNMEA& nmea)
+     : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER),
+     _nmea(&nmea) {
+#else
+  MyMesh(RADIO_CLASS& phy, RadioLibWrapper& rw, mesh::RNG& rng, mesh::RTCClock& rtc, SimpleMeshTables& tables)
+     : BaseCompanionRadioMesh(phy, rw, rng, rtc, tables, board, PUBLIC_GROUP_PSK, LORA_FREQ, LORA_SF, LORA_BW, LORA_CR, LORA_TX_POWER) {
+#endif
+    }
+
+  void begin(FILESYSTEM& fs, mesh::RNG& trng) {
+    BaseCompanionRadioMesh::begin(fs, trng);
+    drawHome();
+  }
+
+  void loop() {
+    BaseCompanionRadioMesh::loop();
+
+    buttonHandler();
+    gpsHandler();
+    screenHandler();
+  }
 };
 
-
+#ifdef HAS_GPS
+MyMesh the_mesh(radio, *new WRAPPER_CLASS(radio, board), fast_rng, *new VolatileRTCClock(), tables, nmea);
+#else
 MyMesh the_mesh(radio, *new WRAPPER_CLASS(radio, board), fast_rng, *new VolatileRTCClock(), tables);
+#endif
 
 void halt() {
   while (1) ;
@@ -267,6 +332,17 @@ void setup() {
   Serial.begin(115200);
 
   board.begin();
+
+#ifdef HAS_GPS
+  gps_serial.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
+
+  pinMode(47, OUTPUT);
+  pinMode(48, OUTPUT);
+  digitalWrite(47, HIGH);
+  digitalWrite(48, HIGH);
+
+  gps_setup(gps_serial);
+#endif
 
 #ifdef SX126X_DIO3_TCXO_VOLTAGE
   float tcxo = SX126X_DIO3_TCXO_VOLTAGE;
@@ -334,5 +410,9 @@ void setup() {
 }
 
 void loop() {
+#ifdef HAS_GPS
+  gps_feed_nmea();
+#endif
+
   the_mesh.loop();
 }
