@@ -187,7 +187,7 @@ protected:
   void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
     BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
     if (path_len == 0xFF) {
-      sprintf(last_orig, "(D) %s", from.name);
+      sprintf(last_orig, "(F) %s", from.name);
     } else {
       sprintf(last_orig, "(%d) %s", path_len, from.name);
     }
@@ -198,7 +198,7 @@ protected:
   void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override {
     BaseCompanionRadioMesh::onChannelMessageRecv(channel, in_path_len, timestamp, text);
     if (in_path_len == 0xFF) {
-      sprintf(last_orig, "(D) Chan");
+      sprintf(last_orig, "(F) Chan");
     } else {
       sprintf(last_orig, "(%d) Chan");
     }
