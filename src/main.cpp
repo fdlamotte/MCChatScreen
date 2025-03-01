@@ -184,6 +184,17 @@ protected:
     }
   }
 
+  void onCommandDataRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onCommandDataRecv(from, path_len, sender_timestamp, text);    
+    if (path_len == 0xFF) {
+      sprintf(last_orig, "[F] %s", from.name);
+    } else {
+      sprintf(last_orig, "[%d] %s", path_len, from.name);
+    }
+    strncpy(last_msg, text, MAX_FRAME_SIZE);
+    drawScreen();
+  }
+
   void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
     BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
     if (path_len == 0xFF) {
