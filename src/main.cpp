@@ -1,4 +1,4 @@
-#define FIRMWARE_BUILD_DATE   "27 Feb 2025"
+#define FIRMWARE_BUILD_DATE   "02 Mar 2025"
 
 #include <Arduino.h>   // needed for PlatformIO
 #include <BLEDevice.h>
