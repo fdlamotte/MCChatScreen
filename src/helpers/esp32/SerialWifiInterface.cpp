@@ -65,9 +65,18 @@ size_t SerialWifiInterface::writeFrame(const uint8_t src[], size_t len) {
   return 0;
 }
 
-#define  BLE_WRITE_MIN_INTERVAL   20
+#define  SER_WRITE_MIN_INTERVAL   20
+
+
+bool SerialWifiInterface::isWriteBusy() const {
+  return millis() < _last_write + SER_WRITE_MIN_INTERVAL;   // still too soon to start another write?
+}
+
 
 size_t SerialWifiInterface::checkRecvFrame(uint8_t dest[]) {
+  if (isWriteBusy())
+    return 0;
+
   if (!client) client = server.available();
 
   if (client.connected()) {
