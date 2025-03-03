@@ -140,14 +140,20 @@ static uint32_t _atoi(const char* sp) {
   return n;
 }
 
-#ifdef BLE_PIN_CODE
-  #include <helpers/esp32/SerialBLEInterface.h>
-  SerialBLEInterface serial_interface;
-#else
-  #include <helpers/ArduinoSerialInterface.h>
-  ArduinoSerialInterface serial_interface;
+#ifndef TCP_PORT
+#define TCP_PORT 5000
 #endif
 
+#ifdef WIFI_SSID
+  #include <helpers/esp32/SerialWifiInterface.h>
+  SerialWifiInterface serial_interface;
+#elif defined(BLE_PIN_CODE)
+   #include <helpers/esp32/SerialBLEInterface.h>
+   SerialBLEInterface serial_interface;
+#else
+   #include <helpers/ArduinoSerialInterface.h>
+   ArduinoSerialInterface serial_interface;
+#endif
 
 #ifdef P_LORA_SCLK
 SPIClass spi;
@@ -399,15 +405,19 @@ void setup() {
   SPIFFS.begin(true);
   the_mesh.begin(SPIFFS, trng);
 
-#ifdef BLE_PIN_CODE
+#ifdef WIFI_SSID
+  WiFi.begin(WIFI_SSID, WIFI_PWD);
+  serial_interface.begin(TCP_PORT);
+#elif defined(BLE_PIN_CODE)
   char dev_name[32+10];
   sprintf(dev_name, "MeshCore-%s", the_mesh.getNodeName());
   serial_interface.begin(dev_name, BLE_PIN_CODE);
 #else
   serial_interface.begin(Serial);
 #endif
+
   the_mesh.startInterface(serial_interface);
-}
+ }
 
 void loop() {
 #ifdef HAS_GPS
