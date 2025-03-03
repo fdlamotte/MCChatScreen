@@ -14,4 +14,6 @@ To setup the build environment, you should clone both repositories at the same l
 $ git clone https://github.com/ripplebiz/MeshCore
 $ git clone https://github.com/fdlamotte/MCChatScreen</pre>
 
+Then in PlatformIO, add both dirs to your workspace.
+
 Once the environment is setup, you can customize the firmware by adding your code and writing your own build targets in `platformio.ini`.
