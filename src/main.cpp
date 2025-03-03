@@ -191,6 +191,10 @@ protected:
     display.printf("Build: %s\n", FIRMWARE_BUILD_DATE);
     display.printf("freq : %03.2f sf %d\n", _prefs.freq, _prefs.sf);
     display.printf("bw   : %03.2f cr %d\n", _prefs.bw, _prefs.cr);
+  #ifdef WIFI_SSID
+    display.printf("IP ");
+    display.print(WiFi.localIP());
+  #endif
     display.display();
 
     if (SCREEN_ON_TIME > 0) {
