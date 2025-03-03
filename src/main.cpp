@@ -150,8 +150,17 @@ static uint32_t _atoi(const char* sp) {
 //   ArduinoSerialInterface serial_interface;
 // #endif
 
+
+
 #include <helpers/esp32/SerialWifiInterface.h>
 SerialWifiInterface serial_interface;
+
+//#define AP_SSID "myssid"
+//#define AP_PWD "mypasswd"
+
+#define NET_SSID "P76"
+#define NET_PWD "salle006@p76"
+
 
 
 #ifdef P_LORA_SCLK
@@ -411,6 +420,33 @@ void setup() {
 // #else
 //   serial_interface.begin(Serial);
 // #endif
+
+ #ifdef AP_SSID
+  IPAddress serverIp(192, 168, 1, 1);
+  IPAddress NMask(255, 255, 255, 0);
+
+  IPAddress IP;
+
+  Serial.println("Setting up wifi network : " + String(SSID));
+
+  // Connect to Wi-Fi network with SSID and password
+  Serial.println("Setting AP (Access Point)…");
+  // Remove the password parameter, if you want the AP (Access Point) to be open
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(AP_SSID, AP_PWD);
+  Serial.println("Wait 100 ms for AP_START...");
+  delay(100);
+ 
+  Serial.println("Set softAPConfig");
+  WiFi.softAPConfig(serverIp, serverIp, NMask);
+ 
+  IP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(IP);
+#else
+  WiFi.begin(NET_SSID, NET_PWD);
+#endif
+
   serial_interface.begin();
   the_mesh.startInterface(serial_interface);
  }

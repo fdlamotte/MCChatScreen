@@ -1,61 +1,12 @@
 #include "SerialWifiInterface.h"
 #include <WiFi.h>
 
-void WiFiEvent(WiFiEvent_t event);
-
-IPAddress serverIp(192, 168, 1, 1);
-IPAddress NMask(255, 255, 255, 0);
-
-//#define AP_SSID "myssid"
-//#define AP_PWD "mypasswd"
-
-#define NET_SSID "P76"
-#define NET_PWD "salle006@p76"
-
-void WiFiEvent(WiFiEvent_t event){
-    switch(event) {
-      case SYSTEM_EVENT_STA_GOT_IP:
-          //When connected set 
-          Serial.print("WiFi connected! IP address: ");
-          Serial.println(WiFi.localIP());
-          break;
-      case SYSTEM_EVENT_STA_DISCONNECTED:
-          Serial.println("WiFi lost connection");
-          break;
-    }
-}
-
 void SerialWifiInterface::begin() {
-  IPAddress IP;
-
-  WiFi.onEvent(WiFiEvent);
-
- #ifdef AP_SSID
-  Serial.println("Setting up wifi network : " + String(SSID));
-
-  // Connect to Wi-Fi network with SSID and password
-  Serial.println("Setting AP (Access Point)…");
-  // Remove the password parameter, if you want the AP (Access Point) to be open
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, AP_PWD);
-  Serial.println("Wait 100 ms for AP_START...");
-  delay(100);
- 
-   Serial.println("Set softAPConfig");
-  WiFi.softAPConfig(serverIp, serverIp, NMask);
- 
-  IP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(IP);
-#else
-  WiFi.begin(NET_SSID, NET_PWD);
-#endif
-
+  // wifi setup is handled outside of this class, only starts the server
   server.begin();
 }
 
 // ---------- public methods
-
 void SerialWifiInterface::enable() { 
   if (_isEnabled) return;
 
