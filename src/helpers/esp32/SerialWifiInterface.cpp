@@ -1,9 +1,9 @@
 #include "SerialWifiInterface.h"
 #include <WiFi.h>
 
-void SerialWifiInterface::begin() {
+void SerialWifiInterface::begin(int port) {
   // wifi setup is handled outside of this class, only starts the server
-  server.begin();
+  server.begin(port);
 }
 
 // ---------- public methods

@@ -140,28 +140,20 @@ static uint32_t _atoi(const char* sp) {
   return n;
 }
 
+#ifndef TCP_PORT
+#define TCP_PORT 5000
+#endif
 
-
-// #ifdef BLE_PIN_CODE
-//   #include <helpers/esp32/SerialBLEInterface.h>
-//   SerialBLEInterface serial_interface;
-// #else
-//   #include <helpers/ArduinoSerialInterface.h>
-//   ArduinoSerialInterface serial_interface;
-// #endif
-
-
-
-#include <helpers/esp32/SerialWifiInterface.h>
-SerialWifiInterface serial_interface;
-
-//#define AP_SSID "myssid"
-//#define AP_PWD "mypasswd"
-
-#define NET_SSID "P76"
-#define NET_PWD "salle006@p76"
-
-
+#ifdef WIFI_SSID
+  #include <helpers/esp32/SerialWifiInterface.h>
+  SerialWifiInterface serial_interface;
+#elif defined(BLE_PIN_CODE)
+   #include <helpers/esp32/SerialBLEInterface.h>
+   SerialBLEInterface serial_interface;
+#else
+   #include <helpers/ArduinoSerialInterface.h>
+   ArduinoSerialInterface serial_interface;
+#endif
 
 #ifdef P_LORA_SCLK
 SPIClass spi;
@@ -413,41 +405,17 @@ void setup() {
   SPIFFS.begin(true);
   the_mesh.begin(SPIFFS, trng);
 
-// #ifdef BLE_PIN_CODE
-//   char dev_name[32+10];
-//   sprintf(dev_name, "MeshCore-%s", the_mesh.getNodeName());
-//   serial_interface.begin(dev_name, BLE_PIN_CODE);
-// #else
-//   serial_interface.begin(Serial);
-// #endif
-
- #ifdef AP_SSID
-  IPAddress serverIp(192, 168, 1, 1);
-  IPAddress NMask(255, 255, 255, 0);
-
-  IPAddress IP;
-
-  Serial.println("Setting up wifi network : " + String(SSID));
-
-  // Connect to Wi-Fi network with SSID and password
-  Serial.println("Setting AP (Access Point)…");
-  // Remove the password parameter, if you want the AP (Access Point) to be open
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, AP_PWD);
-  Serial.println("Wait 100 ms for AP_START...");
-  delay(100);
- 
-  Serial.println("Set softAPConfig");
-  WiFi.softAPConfig(serverIp, serverIp, NMask);
- 
-  IP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(IP);
+#ifdef WIFI_SSID
+  WiFi.begin(WIFI_SSID, WIFI_PWD);
+  serial_interface.begin(TCP_PORT);
+#elif defined(BLE_PIN_CODE)
+  char dev_name[32+10];
+  sprintf(dev_name, "MeshCore-%s", the_mesh.getNodeName());
+  serial_interface.begin(dev_name, BLE_PIN_CODE);
 #else
-  WiFi.begin(NET_SSID, NET_PWD);
+  serial_interface.begin(Serial);
 #endif
 
-  serial_interface.begin();
   the_mesh.startInterface(serial_interface);
  }
 

@@ -29,14 +29,14 @@ class SerialWifiInterface : public BaseSerialInterface {
 protected:
 
 public:
-  SerialWifiInterface() : server(WiFiServer(5000)), client(WiFiClient()) {
+  SerialWifiInterface() : server(WiFiServer()), client(WiFiClient()) {
     deviceConnected = false;
     _isEnabled = false;
     _last_write = 0;
     send_queue_len = recv_queue_len = 0;
   }
 
-  void begin();
+  void begin(int port);
 
   // BaseSerialInterface methods
   void enable() override;
