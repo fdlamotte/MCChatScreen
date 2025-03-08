@@ -221,7 +221,7 @@ protected:
   void onRawDataRecv(mesh::Packet* packet) override;
   void onSendTimeout() override;
 
-  void queueMessage(const ContactInfo& from, uint8_t txt_type, uint8_t path_len, uint32_t sender_timestamp, const uint8_t* extra, int extra_len, const char *text);
+  virtual void queueMessage(const ContactInfo& from, uint8_t txt_type, uint8_t path_len, uint32_t sender_timestamp, const uint8_t* extra, int extra_len, const char *text);
   int getUnreadMsgNb() {return offline_queue_len;}
   virtual void onNextMsgSync() {};
 

@@ -234,6 +234,18 @@ protected:
     drawScreen();
   }
 
+  void onSignedMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const uint8_t *sender_prefix, const char *text) override {
+    BaseCompanionRadioMesh::onSignedMessageRecv(from, path_len, sender_timestamp, sender_prefix, text);
+    if (path_len == 0xFF) {
+      sprintf(last_orig, "(F) %s/%02X", from.name, sender_prefix[0]);
+    } else {
+      sprintf(last_orig, "(%d) %s/%02X", path_len, from.name, sender_prefix[0]);
+    }
+    strncpy(last_msg, text, MAX_FRAME_SIZE);
+    drawScreen();    
+  }
+
+
   void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
     BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
     if (path_len == 0xFF) {
