@@ -1,4 +1,4 @@
-#define FIRMWARE_BUILD_DATE   "02 Mar 2025"
+#define FIRMWARE_BUILD_DATE   "09 Mar 2025"
 
 #include <Arduino.h>   // needed for PlatformIO
 #include <BLEDevice.h>
@@ -354,6 +354,10 @@ void setup() {
   Serial.begin(115200);
 
   board.begin();
+
+#ifdef ESP32_CPU_FREQ
+  setCpuFrequencyMhz(ESP32_CPU_FREQ);
+#endif
 
 #ifdef HAS_GPS
   gps_serial.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
