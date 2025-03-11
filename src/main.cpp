@@ -370,12 +370,8 @@ void setup() {
 #endif
 
 #ifdef HAS_GPS
-  pinMode(GPS_EN, OUTPUT);
-  pinMode(GPS_RESET, OUTPUT);
-  digitalWrite(GPS_EN, HIGH);
-  digitalWrite(GPS_RESET, HIGH);
-
-  gps_serial.begin(GPS_BAUDRATE, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
+  gps_serial.setPins(GPS_RX_PIN, GPS_TX_PIN);
+  gps_serial.begin(GPS_BAUDRATE);
   gps.begin();
 #endif
 
