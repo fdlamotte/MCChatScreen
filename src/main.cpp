@@ -86,11 +86,15 @@ const unsigned char* epd_bitmap_allArray[1] = {
 #endif
 
 #ifndef GPS_EN
-#define GPS_EN                  (48)
+#define GPS_EN                  (47)
 #endif
 
 #ifndef GPS_RESET
-#define GPS_RESET               (47)
+#define GPS_RESET               (48)
+#endif
+
+#ifndef GPS_BAUDRATE
+#define GPS_BAUDRATE            (9600)
 #endif
 
 #include "helpers/LocationProvider.h"
@@ -366,15 +370,13 @@ void setup() {
 #endif
 
 #ifdef HAS_GPS
-  pinMode(47, OUTPUT);
-  pinMode(48, OUTPUT);
-  digitalWrite(47, HIGH);
-  digitalWrite(48, HIGH);
+  pinMode(GPS_EN, OUTPUT);
+  pinMode(GPS_RESET, OUTPUT);
+  digitalWrite(GPS_EN, HIGH);
+  digitalWrite(GPS_RESET, HIGH);
 
-  gps_serial.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
-
-  gps.reset();
-//  gps_setup(gps_serial);
+  gps_serial.begin(GPS_BAUDRATE, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
+  gps.begin();
 #endif
 
 #ifdef SX126X_DIO3_TCXO_VOLTAGE
