@@ -49,18 +49,20 @@
 #define DIRECT_SEND_PERHOP_EXTRA_MILLIS   250
 
 #ifndef MAX_LORA_TX_POWER
-  #define MAX_LORA_TX_POWER  20
+  #define MAX_LORA_TX_POWER  30
 #endif
 /*------------ Frame Protocol --------------*/
+
+#define  PUBLIC_GROUP_PSK  "izOH6cXN6mrJ5e26oRXNcg=="
 
 #define FIRMWARE_VER_CODE    2
 
 #ifndef FIRMWARE_BUILD_DATE
-  #define FIRMWARE_BUILD_DATE   "9 Mar 2025"
+  #define FIRMWARE_BUILD_DATE   "13 Mar 2025"
 #endif
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION   "v1.2.2"
+  #define FIRMWARE_VERSION   "v1.3.0"
 #endif
 
 #define CMD_APP_START              1
@@ -93,6 +95,8 @@
 #define CMD_HAS_CONNECTION        28
 #define CMD_LOGOUT                29   // 'Disconnect'
 #define CMD_GET_CONTACT_BY_KEY    30
+#define CMD_GET_CHANNEL           31
+#define CMD_SET_CHANNEL           32
 
 #define RESP_CODE_OK                0
 #define RESP_CODE_ERR               1
@@ -120,6 +124,8 @@
 #define PUSH_CODE_LOGIN_SUCCESS     0x85
 #define PUSH_CODE_LOGIN_FAIL        0x86
 #define PUSH_CODE_STATUS_RESPONSE   0x87
+//  ... _V3 stuff in here
+#define RESP_CODE_CHANNEL_INFO     18   // a reply to CMD_GET_CHANNEL
 
 /* -------------------------------------------------------------------------------------- */
 
@@ -146,7 +152,6 @@ protected:
   uint32_t expected_ack_crc;  // TODO: keep table of expected ACKs
   uint32_t pending_login;
   uint32_t pending_status;
-  mesh::GroupChannel* _public;
   BaseSerialInterface* _serial;
   unsigned long last_msg_sent;
   ContactsIterator _iter;
@@ -179,6 +184,8 @@ protected:
 
   void loadContacts();
   void saveContacts();
+  void loadChannels();
+  void saveChannels();
   int  getBlobByKey(const uint8_t key[], int key_len, uint8_t dest_buf[]) override;
   bool putBlobByKey(const uint8_t key[], int key_len, const uint8_t src_buf[], int len) override;
   void writeOKFrame();
