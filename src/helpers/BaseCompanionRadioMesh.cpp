@@ -222,6 +222,7 @@ void BaseCompanionRadioMesh::addToOfflineQueue(const uint8_t frame[], int len) {
 }
 int BaseCompanionRadioMesh::getFromOfflineQueue(uint8_t frame[]) {
   if (offline_queue_len > 0) {   // check offline queue
+    onNextMsgSync();
     size_t len = offline_queue[0].len;   // take from top of queue
     memcpy(frame, offline_queue[0].buf, len);
 

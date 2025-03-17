@@ -449,6 +449,13 @@ void setup() {
  }
 
 void loop() {
-
+  uint32_t begin_time = millis();
   the_mesh.loop();
+  uint32_t loop_dur = millis() - begin_time;
+  if (loop_dur < 5) {
+    delay(5 - loop_dur);
+  } else {
+    printf("Loop over 5s : %d\n", loop_dur);
+  }
+
 }
