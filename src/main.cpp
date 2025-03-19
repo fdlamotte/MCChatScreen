@@ -106,36 +106,6 @@ MicroNMEALocationProvider gps = MicroNMEALocationProvider (gps_serial);
 
 /* ---------------------------------- CONFIGURATION ------------------------------------- */
 
-#ifndef LORA_FREQ
-  #define LORA_FREQ   915.0
-#endif
-#ifndef LORA_BW
-  #define LORA_BW     250
-#endif
-#ifndef LORA_SF
-  #define LORA_SF     10
-#endif
-#ifndef LORA_CR
-  #define LORA_CR      5
-#endif
-#ifndef LORA_TX_POWER
-  #define LORA_TX_POWER  20
-#endif
-
-#ifndef MAX_LORA_TX_POWER
-  #define MAX_LORA_TX_POWER  LORA_TX_POWER
-#endif
-
-#ifndef MAX_CONTACTS
-  #define MAX_CONTACTS         100
-#endif
-
-#ifndef OFFLINE_QUEUE_SIZE
-  #define OFFLINE_QUEUE_SIZE  16
-#endif
-
-#define  PUBLIC_GROUP_PSK  "izOH6cXN6mrJ5e26oRXNcg=="
-
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
   uint32_t n = 0;
@@ -229,47 +199,31 @@ protected:
     }
   }
 
-  void onCommandDataRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
-    BaseCompanionRadioMesh::onCommandDataRecv(from, path_len, sender_timestamp, text);    
-    if (path_len == 0xFF) {
-      sprintf(last_orig, "[F] %s", from.name);
-    } else {
-      sprintf(last_orig, "[%d] %s", path_len, from.name);
-    }
+  void onCommandDataRecv(const ContactInfo& from, mesh::Packet* pkt, uint32_t sender_timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onCommandDataRecv(from, pkt, sender_timestamp, text);    
+    sprintf(last_orig, "] %s", from.name);
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
 
-  void onSignedMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const uint8_t *sender_prefix, const char *text) override {
-    BaseCompanionRadioMesh::onSignedMessageRecv(from, path_len, sender_timestamp, sender_prefix, text);
-    if (path_len == 0xFF) {
-      sprintf(last_orig, "(F) %s/%02X", from.name, sender_prefix[0]);
-    } else {
-      sprintf(last_orig, "(%d) %s/%02X", path_len, from.name, sender_prefix[0]);
-    }
+  void onSignedMessageRecv(const ContactInfo& from, mesh::Packet* pkt, uint32_t sender_timestamp, const uint8_t *sender_prefix, const char *text) override {
+    BaseCompanionRadioMesh::onSignedMessageRecv(from, pkt, sender_timestamp, sender_prefix, text);
+    sprintf(last_orig, "> %s/%02X", from.name, sender_prefix[0]);
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();    
   }
 
 
-  void onMessageRecv(const ContactInfo& from, uint8_t path_len, uint32_t sender_timestamp, const char *text) override {
-    BaseCompanionRadioMesh::onMessageRecv(from, path_len, sender_timestamp, text);
-    if (path_len == 0xFF) {
-      sprintf(last_orig, "(F) %s", from.name);
-    } else {
-      sprintf(last_orig, "(%d) %s", path_len, from.name);
-    }
+  void onMessageRecv(const ContactInfo& from, mesh::Packet* pkt, uint32_t sender_timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onMessageRecv(from, pkt, sender_timestamp, text);
+    sprintf(last_orig, "> %s", from.name);
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
 
-  void onChannelMessageRecv(const mesh::GroupChannel& channel, int in_path_len, uint32_t timestamp, const char *text) override {
-    BaseCompanionRadioMesh::onChannelMessageRecv(channel, in_path_len, timestamp, text);
-    if (in_path_len == 0xFF) {
-      sprintf(last_orig, "(F) Chan");
-    } else {
-      sprintf(last_orig, "(%d) Chan");
-    }
+  void onChannelMessageRecv(const mesh::GroupChannel& channel, mesh::Packet* pkt, uint32_t timestamp, const char *text) override {
+    BaseCompanionRadioMesh::onChannelMessageRecv(channel, pkt, timestamp, text);
+    sprintf(last_orig, "Channel msg");
     strncpy(last_msg, text, MAX_FRAME_SIZE);
     drawScreen();
   }
