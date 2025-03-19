@@ -58,11 +58,11 @@
 #define FIRMWARE_VER_CODE    2
 
 #ifndef FIRMWARE_BUILD_DATE
-  #define FIRMWARE_BUILD_DATE   "13 Mar 2025"
+  #define FIRMWARE_BUILD_DATE   "18 Mar 2025"
 #endif
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION   "v1.3.0"
+  #define FIRMWARE_VERSION   "v1.3.0_fdl"
 #endif
 
 #define CMD_APP_START              1
@@ -259,8 +259,8 @@ public:
 
   void begin(FILESYSTEM& fs, mesh::RNG& trng);
   const char* getNodeName() { return _prefs.node_name; }
-  void startInterface(BaseSerialInterface& serial);
+  virtual void startInterface(BaseSerialInterface& serial);
   void savePrefs();
-  void handleCmdFrame(size_t len);
+  virtual void handleCmdFrame(size_t len);
   void loop();
 };
