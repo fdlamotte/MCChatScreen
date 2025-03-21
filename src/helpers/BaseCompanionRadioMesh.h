@@ -9,6 +9,7 @@
   #include <SPIFFS.h>
 #endif
 
+#define RADIOLIB_STATIC_ONLY 1
 #include <RadioLib.h>
 #include <helpers/RadioLibWrappers.h>
 #include <helpers/ArduinoHelpers.h>
@@ -17,23 +18,8 @@
 #include <helpers/IdentityStore.h>
 #include <helpers/BaseSerialInterface.h>
 #include <RTClib.h>
+#include <target.h>
 
-#if defined(HELTEC_LORA_V3)
-  #include <helpers/CustomSX1262Wrapper.h>
-#elif defined(HELTEC_LORA_V2)
-  #include <helpers/CustomSX1276Wrapper.h>
-#elif defined(ARDUINO_XIAO_ESP32C3)
-  #include <helpers/CustomSX1262Wrapper.h>
-  #include <helpers/CustomSX1268Wrapper.h>
-#elif defined(SEEED_XIAO_S3) || defined(LILYGO_T3S3)
-  #include <helpers/CustomSX1262Wrapper.h>
-#elif defined(RAK_4631)
-  #include <helpers/CustomSX1262Wrapper.h>
-#elif defined(T1000_E)
-  #include <helpers/CustomLR1110Wrapper.h>
-#endif
-
-#include <helpers/BaseChatMesh.h>
 
 #ifndef LORA_FREQ
   #define LORA_FREQ   915.0
@@ -67,11 +53,11 @@
   #define BLE_NAME_PREFIX  "MeshCore-"
 #endif
 
+#include <helpers/BaseChatMesh.h>
 #define SEND_TIMEOUT_BASE_MILLIS          500
 #define FLOOD_SEND_TIMEOUT_FACTOR         16.0f
 #define DIRECT_SEND_PERHOP_FACTOR         6.0f
 #define DIRECT_SEND_PERHOP_EXTRA_MILLIS   250
-
 
 /*------------ Frame Protocol --------------*/
 
@@ -80,11 +66,11 @@
 #define FIRMWARE_VER_CODE    3
 
 #ifndef FIRMWARE_BUILD_DATE
-  #define FIRMWARE_BUILD_DATE   "19 Mar 2025"
+  #define FIRMWARE_BUILD_DATE   "21 Mar 2025"
 #endif
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION   "v1.4.0_fdl"
+  #define FIRMWARE_VERSION   "v1.4.0r_fdl"
 #endif
 
 #define CMD_APP_START              1
@@ -199,6 +185,7 @@ protected:
   ContactsIterator _iter;
   uint32_t _iter_filter_since;
   uint32_t _most_recent_lastmod;
+  uint32_t _active_ble_pin;
   bool  _iter_started;
   uint8_t app_target_ver;
   uint8_t* sign_data;
@@ -309,6 +296,7 @@ public:
 
   void begin(FILESYSTEM& fs, mesh::RNG& trng);
   const char* getNodeName() { return _prefs.node_name; }
+  uint32_t getBLEPin() { return _active_ble_pin; }
   virtual void startInterface(BaseSerialInterface& serial);
   void savePrefs();
   virtual void handleCmdFrame(size_t len);
